@@ -1,9 +1,10 @@
 /* ============================================================
    MEMORIA — único módulo con acceso a la persistencia
+   v2.2: añade lectura/guardado de la materia elegida (tv:material).
    ============================================================ */
 const Memoria=(()=>{
 "use strict";
-const K_PRO="tv:progreso",K_SES="tv:sesion",K_TEMA="tv:tema";
+const K_PRO="tv:progreso",K_SES="tv:sesion",K_TEMA="tv:tema",K_MAT="tv:material";
 const VERSION=1;
 let lsOK=true;
 
@@ -170,9 +171,13 @@ function leerTema(){
 }
 function guardarTema(t){lsSet(K_TEMA,t);}
 
+/* ---- Materia activa (selector multi-material) ---- */
+function leerMaterial(){return lsGet(K_MAT);}
+function guardarMaterial(id){lsSet(K_MAT,id);}
+
 function disponible(){return lsOK;}
 
 return{VERSION,hash,leer,registrar,historial,stats,falladasActuales,borrar,
   exportarJSON,importarJSON,vincularArchivo,reactivar,desvincular,estadoArchivo,soportaArchivo,init,
-  guardarSesion,leerSesion,borrarSesion,leerTema,guardarTema,disponible};
+  guardarSesion,leerSesion,borrarSesion,leerTema,guardarTema,leerMaterial,guardarMaterial,disponible};
 })();

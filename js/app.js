@@ -1,8 +1,10 @@
 /* ============================================================
    APP — motor del test (agnóstico del contenido y del disco)
+   v2.2: selector de materia (multi-material) en la pantalla de inicio.
    ============================================================ */
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
+if(!window.BANCO)throw new Error("Ningún banco disponible: revisa bancos/verbos.js, bancos/html.js y js/bancos.js.");
 const LETRAS=["A","B","C","D","E","F"];
 const SEC=BANCO.secciones;
 const NBANCO=BANCO.preguntas.length;
@@ -11,6 +13,8 @@ let state={order:[],cur:0,answers:{},mode:"instant",filter:null,start:0,timerId:
 let ultimoIntento=null,revFilter="all",overlayActivo=null,menuAbierto=false,menuCtx=null,menuTrigger=null;
 let histVolver="#s-start",toastId=null,cbConfirm=null,temaActual="claro";
 const secMenu=$("#secmenu");
+const matMenu=$("#matmenu");
+let matAbierto=false,matTrigger=null;
 
 /* ---- utilidades ---- */
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -32,11 +36,11 @@ function toast(msg){
 }
 
 /* ---- overlay / modales ---- */
-/* ⭐ CAMBIO: el overlay (desenfoque de página) se muestra siempre que
-   el menú de secciones esté abierto, también desde la pantalla de inicio */
-function sincOverlay(){$("#overlay").classList.toggle("hidden",!(!!overlayActivo||menuAbierto));}
+/* ⭐ v2.2: el overlay también acompaña al menú de materia */
+function sincOverlay(){$("#overlay").classList.toggle("hidden",!(!!overlayActivo||menuAbierto||matAbierto));}
 function abrirOverlay(tipo){
   if(menuAbierto)cerrarMenu(false);
+  if(matAbierto)cerrarMatMenu(false);
   overlayActivo=tipo;sincOverlay();
   $("#qrmodal").classList.toggle("hidden",tipo!=="qr");
   $("#confirmmodal").classList.toggle("hidden",tipo!=="confirm");
@@ -46,6 +50,7 @@ function cerrarOverlay(){
   $("#qrmodal").classList.add("hidden");
   $("#confirmmodal").classList.add("hidden");
   if(menuAbierto)cerrarMenu(false);
+  if(matAbierto)cerrarMatMenu(false);
   sincOverlay();
 }
  $("#overlay").onclick=cerrarOverlay;
@@ -116,6 +121,7 @@ function updateFilterUI(){
   });
 }
 function abrirMenu(trigger,ctx){
+  if(matAbierto)cerrarMatMenu(false);
   menuAbierto=true;menuCtx=ctx;menuTrigger=trigger;
   secMenu.classList.remove("hidden");
   secMenu.classList.toggle("inquiz",ctx==="quiz");
@@ -158,12 +164,65 @@ function elegirSeccion(sec){
  $("#secfilter").onclick=e=>{if(menuAbierto){cerrarMenu(false);return;}abrirMenu(e.currentTarget,"start");};
  $("#qsecbtn").onclick=e=>{if(menuAbierto){cerrarMenu(false);return;}abrirMenu(e.currentTarget,"quiz");};
 document.addEventListener("click",e=>{
-  if(!menuAbierto)return;
-  if(e.target.closest("#secmenu"))return;
-  if(e.target.closest("#secfilter")||e.target.closest("#qsecbtn"))return;
-  cerrarMenu(false);
+  if(!menuAbierto&&!matAbierto)return;
+  if(e.target.closest("#secmenu")||e.target.closest("#matmenu"))return;
+  if(e.target.closest("#secfilter")||e.target.closest("#qsecbtn")||e.target.closest("#matfilter"))return;
+  if(menuAbierto)cerrarMenu(false);
+  if(matAbierto)cerrarMatMenu(false);
 });
-window.addEventListener("scroll",()=>{if(menuAbierto)cerrarMenu(false);},{capture:true,passive:true});
+window.addEventListener("scroll",()=>{if(menuAbierto)cerrarMenu(false);if(matAbierto)cerrarMatMenu(false);},{capture:true,passive:true});
+
+/* ---- menú de materias (multi-material) ---- */
+function materialActivo(){return CATALOGO.find(b=>b.id===BANCO.meta.id)||null;}
+function pintarChipMaterial(){
+  const m=materialActivo();
+  $("#matfilter").innerHTML=(m?esc(m.titulo):"Material")+'<span class="caret">▾</span>';
+}
+function itemMat(b){
+  const data=window[b.var];
+  const btn=document.createElement("button");
+  btn.className="sm-item";btn.type="button";btn.setAttribute("role","menuitemradio");
+  btn.dataset.mat=b.id;
+  btn.setAttribute("aria-checked",data.meta.id===BANCO.meta.id?"true":"false");
+  btn.innerHTML='<span class="sm-name"><b>'+esc(b.titulo)+'</b><span class="sm-sub">'+esc(b.subtitulo)+' · '+data.preguntas.length+' preguntas</span></span><span class="sm-check">✓</span>';
+  btn.onclick=()=>elegirMaterial(b.id);
+  return btn;
+}
+function construirMatMenu(){
+  const cont=$("#mm-items");cont.innerHTML="";
+  CATALOGO.forEach(b=>{if(window[b.var])cont.appendChild(itemMat(b));});
+}
+function abrirMatMenu(trigger){
+  if(menuAbierto)cerrarMenu(false);
+  matAbierto=true;matTrigger=trigger;
+  matMenu.classList.remove("hidden");
+  const r=trigger.getBoundingClientRect();
+  const w=Math.min(300,window.innerWidth-16);
+  matMenu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-w-8))+"px";
+  matMenu.style.top=(r.bottom+8)+"px";
+  trigger.setAttribute("aria-expanded","true");
+  sincOverlay();
+  const items=$$("#mm-items .sm-item");
+  const ini=items.find(b=>b.getAttribute("aria-checked")==="true")||items[0];
+  if(ini)ini.focus({preventScroll:true});
+}
+function cerrarMatMenu(refocus){
+  if(!matAbierto)return;
+  matAbierto=false;
+  matMenu.classList.add("hidden");
+  if(matTrigger){
+    matTrigger.setAttribute("aria-expanded","false");
+    if(refocus)matTrigger.focus();
+  }
+  matTrigger=null;
+  sincOverlay();
+}
+function elegirMaterial(id){
+  if(id===BANCO.meta.id){cerrarMatMenu(false);return;}
+  Memoria.guardarMaterial(id);
+  location.reload();
+}
+ $("#matfilter").onclick=e=>{if(matAbierto){cerrarMatMenu(false);return;}abrirMatMenu(e.currentTarget);};
 
 /* ---- modo (segmented) ---- */
 function pintarModo(m){
@@ -574,6 +633,20 @@ document.addEventListener("keydown",e=>{
     if(e.key==="End"){e.preventDefault();items[items.length-1].focus({preventScroll:true});return;}
     return;
   }
+  if(matAbierto){
+    if(e.key==="Escape"){e.preventDefault();cerrarMatMenu(true);return;}
+    if(e.key==="Tab"){cerrarMatMenu(false);return;}
+    const items=$$("#mm-items .sm-item");
+    const idx=items.indexOf(document.activeElement);
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+      e.preventDefault();
+      const n=e.key==="ArrowDown"?(idx+1)%items.length:(idx-1+items.length)%items.length;
+      items[Math.max(0,n)].focus({preventScroll:true});return;
+    }
+    if(e.key==="Home"){e.preventDefault();items[0].focus({preventScroll:true});return;}
+    if(e.key==="End"){e.preventDefault();items[items.length-1].focus({preventScroll:true});return;}
+    return;
+  }
   if(!$("#s-quiz").classList.contains("active"))return;
   const qi=state.order[state.cur];
   if(qi==null)return;
@@ -599,6 +672,8 @@ function init(){
   document.title=BANCO.meta.titulo+" · "+BANCO.meta.subtitulo;
   aplicarTema(Memoria.leerTema()||(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"oscuro":"claro"));
   construirMenu();
+  construirMatMenu();
+  pintarChipMaterial();
   pintarModo("instant");
   refrescarInicio();
   Memoria.init();
