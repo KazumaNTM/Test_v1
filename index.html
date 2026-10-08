@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>Test de verbos · regulares e irregulares</title>
+<title>Test de estudio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
 <script>/* Anti-parpadeo: aplica tema antes de pintar */
 try{var t=localStorage.getItem("tv:tema");if(t!=="claro"&&t!=="oscuro")t=(matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"oscuro":"claro";document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
@@ -34,6 +34,7 @@ try{var t=localStorage.getItem("tv:tema");if(t!=="claro"&&t!=="oscuro")t=(matchM
       <h1 id="titulo"></h1>
       <p class="sub" id="descripcion"></p>
       <div class="chips">
+        <button class="chip chipbtn" id="matfilter" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="matmenu"></button>
         <div class="chip"><b id="nq">…</b> preguntas</div>
         <button class="chip chipbtn" id="secfilter" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="secmenu"></button>
         <div class="chip"><b>1</b> respuesta correcta</div>
@@ -143,6 +144,13 @@ try{var t=localStorage.getItem("tv:tema");if(t!=="claro"&&t!=="oscuro")t=(matchM
   <div class="sm-legend" id="sm-legend"></div>
 </div>
 
+<!-- Menú de materias (multi-material) -->
+<div id="matmenu" class="secmenu glass matmenu hidden" role="menu" aria-label="Selector de materia">
+  <div class="sm-title">Elegir materia</div>
+  <div class="sm-warn">Cambiar de materia recarga la página</div>
+  <div id="mm-items"></div>
+</div>
+
 <!-- Modal QR -->
 <div id="qrmodal" class="modal card hidden" role="dialog" aria-modal="true" aria-label="Abrir en otro dispositivo">
   <h3 class="m-t">Abrir en otro dispositivo</h3>
@@ -190,8 +198,11 @@ try{var t=localStorage.getItem("tv:tema");if(t!=="claro"&&t!=="oscuro")t=(matchM
 
 <noscript>Este test requiere JavaScript activado.</noscript>
 
-<script src="js/banco.js"></script>
+<script src="bancos/verbos.js"></script>
+<script src="bancos/html.js"></script>
+<script src="bancos/css.js"></script>
 <script src="js/memoria.js"></script>
+<script src="js/bancos.js"></script>
 <script src="js/qr.js"></script>
 <script src="js/app.js"></script>
 
@@ -201,13 +212,15 @@ window.addEventListener("load",function(){
   var p=[];
   var s=document.querySelector(".screen:not(.active)");
   if(s&&getComputedStyle(s).display!=="none")p.push("css/estilos.css");
-  if(typeof BANCO==="undefined")p.push("js/banco.js");
+  if(typeof BANCO_VERBOS==="undefined")p.push("bancos/verbos.js");
+  if(typeof BANCO_HTML==="undefined")p.push("bancos/html.js");
   if(typeof Memoria==="undefined")p.push("js/memoria.js");
+  if(typeof CATALOGO==="undefined")p.push("js/bancos.js");
   if(typeof QR==="undefined")p.push("js/qr.js");
   if(p.length){
     var d=document.createElement("div");
     d.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99999;background:#c0392b;color:#fff;padding:12px 18px;font:14px/1.5 sans-serif;text-align:center";
-    d.innerHTML="<b>⚠ Archivos no encontrados:</b> "+p.join(" · ")+".<br>Guarda cada archivo en su carpeta correcta (css/ y js/, junto a index.html). Instrucciones en README.md.";
+    d.innerHTML="<b>⚠ Archivos no encontrados:</b> "+p.join(" · ")+".<br>Guarda cada archivo en su carpeta correcta (bancos/, css/ y js/, junto a index.html). Instrucciones en README.md.";
     document.body.appendChild(d);
   }
 });
