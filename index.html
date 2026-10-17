@@ -236,6 +236,7 @@ try{var t=localStorage.getItem("tv:tema");if(t!=="claro"&&t!=="oscuro")t=(matchM
 <script src="bancos/css.js"></script>
 <script src="bancos/js.js"></script>
 <script src="bancos/integracion.js"></script>
+<script src="bancos/banco_ingles.js"></script>
 <script src="js/memoria.js"></script>
 <script src="js/bancos.js"></script>
 <script src="js/fondos.js"></script>
@@ -253,6 +254,7 @@ window.addEventListener("load",function(){
   if(typeof BANCO_CSS==="undefined")p.push("bancos/css.js");
   if(typeof BANCO_JS==="undefined")p.push("bancos/js.js");
   if(typeof BANCO_INTEGRACION==="undefined")p.push("bancos/integracion.js");
+  if(typeof BANCO_INGLES==="undefined")p.push("bancos/banco_ingles.js");
   if(typeof Memoria==="undefined")p.push("js/memoria.js");
   if(typeof CATALOGO==="undefined")p.push("js/bancos.js");
   if(typeof CATALOGO_FONDOS==="undefined")p.push("js/fondos.js");
