@@ -1,9 +1,9 @@
 Test de estudio interactivo — Memoria maestra del proyecto
-(README OFICIAL · v2.6 · pégalo COMPLETO al inicio de cada conversación con la IA)
+(README OFICIAL · v2.7 · pégalo COMPLETO al inicio de cada conversación con la IA)
 
 Este documento es la memoria del proyecto: estado, decisiones cerradas y
-flujos de trabajo. Contiene todo el contexto necesario para continuar el
-desarrollo sin depender de conversaciones largas.
+flujos de trabajo. Contiene todo el contexto necesario para continuar
+el desarrollo sin depender de conversaciones largas.
 
 1 · QUÉ ES
 Aplicación web estática para tests de opción múltiple generados a partir
@@ -20,7 +20,8 @@ móvil.
   el banco de HTML (v2), el de CSS (v2.3) y los de JavaScript e
   integración (v2.6). Desde v2.2 hay selector de materia en pantalla de
   inicio: el motor es único y los bancos conviven sin sobrescribirse.
-  Desde v2.4 el fondo de pantalla es personalizable.
+  Desde v2.4 el fondo de pantalla es personalizable. Desde v2.7 los
+  bancos incorporan metadatos de trazabilidad (ref, cita, fuente).
 
 2 · ESTRUCTURA DE ARCHIVOS
 
@@ -33,14 +34,18 @@ móvil.
     bancos/js.js         Banco de JavaScript (expone BANCO_JS)
     bancos/integracion.js Banco de integración (expone BANCO_INTEGRACION)
     js/memoria.js        Persistencia (única vía de acceso al disco)
+    js/textos.js         Textos de la interfaz (TXT; existe desde v2.5)
     js/bancos.js         Registro de materiales (CATALOGO) + elige activo
     js/fondos.js         Registro de fondos (CATALOGO_FONDOS)
     js/qr.js             Codificador QR embebido (offline)
     js/app.js            Motor del test
     README.md            Esta memoria maestra
-    PLANTILLA-BANCO.txt  Instrucciones para crear bancos nuevos (no es
-                         parte de la web; se entrega a la IA junto con
-                         el PDF del material)
+    PLANTILLA-BANCO.txt  Contrato del banco de preguntas (no es parte
+                         de la web; se entrega a la IA junto con el PDF
+                         del material nuevo)
+    PROMPT-BANCO.txt     Prompt maestro reutilizable para pedir bancos
+                         a la IA con cualquier PDF (herramienta del
+                         dueño; no es parte de la web)
 
 Orden de carga: bancos/* → memoria.js → bancos.js → fondos.js → qr.js →
 app.js.
@@ -65,21 +70,28 @@ exactamente qué archivo falta o está mal ubicado (cubre los 5 bancos).
 Cada banco es un archivo en bancos/ con variable única y exposición:
 
     const BANCO_NOMBRE = {
-      meta: { id, titulo, subtitulo, descripcion, nota },
+      meta: { id, titulo, subtitulo, fuente, descripcion, nota },
       secciones: { A:{nombre,color}, /* letras libres */ },
-      preguntas: [ { s, q, o:[...], c, e } ]  // c = índice 0-based correcto
+      preguntas: [ { s, q, o:[...], c, e, ref, cita } ]
     };
     window.BANCO_NOMBRE = BANCO_NOMBRE;
 
 - Y una línea en CATALOGO (js/bancos.js): {id:"…",var:"BANCO_NOMBRE"}.
-  Título y subtítulo NO se escriben ahí: se derivan del meta del banco
-  (Regla de oro 6).
-- Campos extra (ref, d…) se ignoran sin error.
-- Identidad de pregunta = hash de su texto: reordenar el banco NO rompe
-  el historial; MODIFICAR el texto de una pregunta resetea su estadística.
+  Título y subtítulo NO se escriben ahí: js/bancos.js los deriva del
+  meta del banco (Regla de oro 6).
+- Campos extra se ignoran sin error. La trazabilidad (v2.7) usa campos
+  extra: meta.fuente (referencia del documento) y, por pregunta, ref
+  (ubicación) y cita (fragmento LITERAL del PDF). La web no los lee ni
+  los muestra: son auditoría del dueño (Ctrl+F de la cita en el PDF).
+- Identidad de pregunta = hash FNV-1a del enunciado q (memoria.js):
+  reordenar el banco NO rompe el historial; MODIFICAR q resetea su
+  estadística; modificar o, c, e, ref o cita NO. Nunca dos preguntas
+  del mismo banco con q idéntico literal (colisionarían en historial y
+  repaso de falladas). Las preguntas nuevas se añaden SIEMPRE al final
+  del array (las sesiones guardadas usan índices).
 - meta.id distinto → historiales independientes por material.
 
-5 · ESTADO ACTUAL (v2.6)
+5 · ESTADO ACTUAL (v2.7)
 - Selector de materia en pantalla de inicio (chip desplegable, mismo
   patrón que el de secciones). Muestra título + subtítulo + nº de
   preguntas de cada material. Cambiar de materia recarga la página.
@@ -101,6 +113,17 @@ Cada banco es un archivo en bancos/ con variable única y exposición:
     feature detection y carga).
     Fuente: mismo PDF Nematrian — los tres bloques (HTML, CSS y JS)
     quedan cubiertos; el banco de integración es transversal.
+- En elaboración: ingles-basico-tebaev-v1 — "Test de inglés básico",
+  del Cuadernillo de Inglés Básico (TEBAEV, 1.ª ed. 2021). Estructura
+  propuesta (pendiente del visto bueno del dueño): A=45 "To be, presente
+  y rutinas" (Bloques I–II) · B=40 "Presente continuo y cuantificadores"
+  (Bloques III–IV) · C=45 "Comparativos y pasado" (Bloques V–VI) ·
+  D=35 "Imperativos, modales y futuro" (Bloques VII–VIII). Total inicial
+  165, ampliable hasta ~240 con el mismo meta.id. Estimación del
+  material: 200–270 preguntas únicas. Será el primer banco con
+  trazabilidad completa (ref + cita + meta.fuente). Nota de la
+  conversación de origen: el PDF llegó truncado (solo el Bloque I quedó
+  visible); los Bloques II–VIII se pegan por partes.
 - Fondos y opacidad (v2.4):
   · Carpeta fondos/ + registro js/fondos.js. Botón en el cluster fijo
     (QR · Fondo · Tema), disponible desde cualquier pantalla.
@@ -150,8 +173,11 @@ guía con dos soluciones (servidor local o GitHub Pages).
 
 8 · AÑADIR UN NUEVO MATERIAL · NUEVOS FONDOS
 MATERIAL:
-1. Conversación nueva con la IA: pegar este README + PLANTILLA-BANCO.txt
-   y adjuntar el PDF del material nuevo.
+1. Conversación nueva con la IA usando PROMPT-BANCO.txt (prompt
+   maestro, rellenando los [corchetes]): se entregan en el mismo
+   mensaje ese prompt + este README + la PLANTILLA-BANCO + el PDF del
+   material nuevo. La IA primero propone (estimación, estructura,
+   secciones, reparto) y espera el visto bueno del dueño.
 2. La IA genera el banco por lotes según la plantilla → guardar como
    bancos/nombre.js (UTF-8, "Todos los archivos (*.*)").
 3. Pedir a la IA: "integra el material nuevo". La IA entrega
@@ -178,7 +204,9 @@ respuesta): cada ejecución devuelve el banco COMPLETO con las preguntas
 nuevas añadidas — nunca fragmentos. Reglas: conservar intactas las
 preguntas existentes (protegen el historial), no repetir temas ya
 cubiertos en esa sección, mantener meta.id, índice correcto variando de
-posición, explicación citando el texto fuente.
+posición, explicación citando el texto fuente, toda pregunta con ref y
+cita, nunca duplicar un enunciado q existente y añadir las nuevas al
+final del array (§4).
 Ojo: una ampliación llega como "parte 2" con el banco COMPLETO dentro
 (creció de 20 a 40 preguntas): se REEMPLAZA el archivo existente, no se
 suman archivos.
@@ -216,9 +244,9 @@ suman archivos.
   inicio); el quiz conserva únicamente "✕ Salir".
 - Chips de inicio en rejilla uniforme con texto centrado; se acepta
   texto en 2 líneas antes que desigualar anchos o alturas.
-- Formato de CATALOGO: una línea por material, solo {id, var} (Regla de
-  oro 6). Adoptado en v2.6; llegó sin documentar de otra conversación y
-  quedó incorporado oficialmente.
+- Formato de CATALOGO: una línea por material, solo {id, var} (Regla
+  de oro 6). Adoptado en v2.6; llegó sin documentar de otra conversación
+  y quedó incorporado oficialmente.
 - CERO EDICIONES MANUALES: nunca modificar a mano un archivo existente
   del proyecto, ni siquiera una coma o una línea. Todo cambio se recibe
   de la IA como archivo COMPLETO listo para sobrescribir.
@@ -231,6 +259,19 @@ suman archivos.
 - "Repetir mis falladas" = intento actual (Resultados) · "Entrenar
   falladas" = histórico del banco (Historial).
 - Guardado de archivos: "Todos los archivos (*.*)" + codificación UTF-8.
+- Trazabilidad de bancos (v2.7): todo banco nuevo (o ampliado) lleva
+  meta.fuente y, por pregunta, ref y cita. Invisibles para la web; su
+  función es la auditoría del dueño (Ctrl+F de la cita en el PDF).
+  Mostrarlos en pantalla NO está decidido: solo proponerlo si el dueño
+  lo pide.
+- Identidad técnica (verificada en el código, v2.7): la huella es el
+  hash FNV-1a del enunciado q. Editar q resetea la estadística; editar
+  o, c, e, ref o cita no. Nunca dos preguntas con q idéntico literal.
+  Preguntas nuevas siempre al final del array.
+- Puente de títulos: js/bancos.js deriva titulo/subtitulo del meta de
+  cada banco (.map sobre CATALOGO) y app.js los lee del CATALOGO ya
+  procesado. Coherente con la Regla de oro 6 (verificado en v2.7 tras
+  una falsa alarma sobre app.js).
 
 12 · ATAJOS DE TECLADO (PC)
 1–4 o A–D responder · →/← navegar · Escape cerrar menús y modales ·
@@ -238,9 +279,13 @@ suman archivos.
 slider enfocado, las flechas lo ajustan (nativo) y Tab cierra el menú.
 
 13 · PENDIENTES (ROADMAP)
-1 · Revisar PLANTILLA-BANCO.txt: si describe la línea de CATALOGO con
-titulo/subtitulo, pedir a la IA su actualización al formato {id, var}
-(cambio v2.6). Enviarla a la IA junto con el README en la próxima tarea.
+1 · Terminar el banco de inglés (ingles-basico-tebaev-v1): falta el
+    visto bueno del dueño a la estructura, pegar los Bloques II–VIII
+    del PDF y generar los lotes (15–20 preguntas por entrega);
+    después, integración según §8.
+2 · Opcional y aplazado: mostrar ref/cita en pantalla (p. ej., una
+    línea "Fuente" en Revisión). Requiere tocar app.js: solo proponerlo
+    si el dueño lo pide tras usar los metadatos invisibles.
 Descartados por el dueño (no volver a proponer): bloque JS del PDF
 Nematrian (ya cubierto por el banco v2.6) · mejoras UI v2.3 (barra
 sticky, entrada escalonada, theme-color dinámica, título de pestaña
@@ -294,6 +339,19 @@ del repo si aún figuran).
   de oro 6; el cambio había llegado sin documentar de otra conversación)
   · autodiagnóstico ampliado a los 5 bancos (incluido BANCO_CSS, que
   faltaba) · §13: nueva tarea de revisión de PLANTILLA-BANCO.txt.
+- v2.7: trazabilidad en los bancos — meta.fuente, ref y cita como
+  metadatos invisibles de auditoría; verificado contra memoria.js y
+  app.js que solo q entra en la huella y que los campos extra se
+  ignoran · reglas técnicas de identidad documentadas (editar q resetea;
+  editar o/c/e/ref/cita no; nunca duplicar q; nuevas al final) ·
+  PLANTILLA-BANCO.txt corregida: línea de CATALOGO al formato {id, var},
+  integración siempre vía IA (sin ediciones manuales), trazabilidad y
+  reglas nuevas (resuelve la tarea pendiente de v2.6) · PROMPT-BANCO.txt
+  creado (prompt maestro reutilizable: fases propuesta → lotes →
+  integración) · js/textos.js incorporado al árbol de archivos (existía
+  desde v2.5 sin figurar) · puente de títulos de js/bancos.js
+  documentado · en elaboración: banco de inglés
+  (ingles-basico-tebaev-v1, 165 preguntas previstas).
 
 15 · PROTOCOLO DE TRABAJO CON LA IA (cómo trabajo yo)
 - Conversación nueva: pegar este README completo al inicio.
