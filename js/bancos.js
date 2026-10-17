@@ -17,7 +17,8 @@ const CATALOGO=[
   {id:"html-fundamentos-v1",var:"BANCO_HTML"},
   {id:"css-fundamentos-selectores-v1",var:"BANCO_CSS"},
   {id:"javascript-fundamentos-dom-v1",var:"BANCO_JS"},
-  {id:"integracion-html-css-js-v1",var:"BANCO_INTEGRACION"}
+  {id:"integracion-html-css-js-v1",var:"BANCO_INTEGRACION"},
+  {id:"ingles-basico-tebaev-v1",var:"BANCO_INGLES"}
 ].filter(b=>window[b.var])
  .map(b=>({id:b.id,var:b.var,
    titulo:window[b.var].meta.titulo,
