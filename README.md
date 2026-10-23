@@ -1,5 +1,5 @@
 Test de estudio interactivo — Memoria maestra del proyecto
-(README OFICIAL · v2.7 · pégalo COMPLETO al inicio de cada conversación con la IA)
+(README OFICIAL · v2.9 · pégalo COMPLETO al inicio de cada conversación con la IA)
 
 Este documento es la memoria del proyecto: estado, decisiones cerradas y
 flujos de trabajo. Contiene todo el contexto necesario para continuar
@@ -33,6 +33,7 @@ móvil.
     bancos/css.js        Banco de CSS (expone BANCO_CSS)
     bancos/js.js         Banco de JavaScript (expone BANCO_JS)
     bancos/integracion.js Banco de integración (expone BANCO_INTEGRACION)
+    bancos/banco_ingles.js Banco de inglés (expone BANCO_INGLES)
     js/memoria.js        Persistencia (única vía de acceso al disco)
     js/textos.js         Textos de la interfaz (TXT; existe desde v2.5)
     js/bancos.js         Registro de materiales (CATALOGO) + elige activo
@@ -46,11 +47,15 @@ móvil.
     PROMPT-BANCO.txt     Prompt maestro reutilizable para pedir bancos
                          a la IA con cualquier PDF (herramienta del
                          dueño; no es parte de la web)
+    herramientas/validar_banco.py  Validador de estructura y citas
+                         (Python; no se carga en la web)
+    herramientas/fuente_ingles.txt Texto extraído del PDF de inglés
+                         para auditar las citas (no se carga en la web)
 
 Orden de carga: bancos/* → memoria.js → bancos.js → fondos.js → qr.js →
 app.js.
 Autodiagnóstico: si al abrir la web aparece un banner rojo, indica
-exactamente qué archivo falta o está mal ubicado (cubre los 5 bancos).
+exactamente qué archivo falta o está mal ubicado (cubre los 6 bancos).
 
 3 · REGLAS DE ORO
 1. app.js no conoce el contenido ni el disco · los bancos no contienen
@@ -91,12 +96,12 @@ Cada banco es un archivo en bancos/ con variable única y exposición:
   del array (las sesiones guardadas usan índices).
 - meta.id distinto → historiales independientes por material.
 
-5 · ESTADO ACTUAL (v2.7)
+5 · ESTADO ACTUAL (v2.9)
 - Selector de materia en pantalla de inicio (chip desplegable, mismo
   patrón que el de secciones). Muestra título + subtítulo + nº de
   preguntas de cada material. Cambiar de materia recarga la página.
   La última materia elegida se recuerda por dispositivo (tv:material).
-- Materiales disponibles (5 en el selector):
+- Materiales disponibles (6 en el selector):
   · verbos-regulares-irregulares-v1 — "Test de verbos" · 61 preguntas
     (A=23 Paradigmas · B=10 Patrones · C=17 Significados · D=11 Regulares).
   · html-fundamentos-v1 — "Test de HTML" · 40 preguntas (A=12 · B=10 ·
@@ -113,17 +118,28 @@ Cada banco es un archivo en bancos/ con variable única y exposición:
     feature detection y carga).
     Fuente: mismo PDF Nematrian — los tres bloques (HTML, CSS y JS)
     quedan cubiertos; el banco de integración es transversal.
-- En elaboración: ingles-basico-tebaev-v1 — "Test de inglés básico",
-  del Cuadernillo de Inglés Básico (TEBAEV, 1.ª ed. 2021). Estructura
-  propuesta (pendiente del visto bueno del dueño): A=45 "To be, presente
-  y rutinas" (Bloques I–II) · B=40 "Presente continuo y cuantificadores"
-  (Bloques III–IV) · C=45 "Comparativos y pasado" (Bloques V–VI) ·
-  D=35 "Imperativos, modales y futuro" (Bloques VII–VIII). Total inicial
-  165, ampliable hasta ~240 con el mismo meta.id. Estimación del
-  material: 200–270 preguntas únicas. Será el primer banco con
-  trazabilidad completa (ref + cita + meta.fuente). Nota de la
-  conversación de origen: el PDF llegó truncado (solo el Bloque I quedó
-  visible); los Bloques II–VIII se pegan por partes.
+  · ingles-basico-tebaev-v1 — "Test de inglés básico" · 240 preguntas
+    (A=60 "To be, presente simple y rutinas", Bloques I–II · B=60
+    "Presente continuo y cuantificadores", Bloques III–IV · C=60
+    "Comparativos, superlativos y pasado", Bloques V–VI · D=60
+    "Imperativos, modales y futuro", Bloques VII–VIII). Fuente:
+    Cuadernillo de Inglés Básico (TEBAEV, 1.ª ed. 2021). Completado y
+    ampliado de 165 a 240 con el mismo meta.id → historial intacto.
+    Primer banco con trazabilidad completa (ref + cita + meta.fuente);
+    las 240 citas están verificadas literalmente contra el texto
+    extraído del PDF. Distribución de la respuesta correcta equilibrada
+    (15/15/15/15 por sección).
+    En v2.9 se retiraron 25 preguntas de comprensión lectora centradas en
+    datos de personajes (qué estudiaba alguien, a qué hora se levantaba,
+    ocupaciones, parentescos, edades, etc.). Para no bajar de 240 ni romper
+    el equilibrio, cada slot se sustituyó en la misma posición por una
+    pregunta de gramática o vocabulario; se conservaron `s` y `c`. Las
+    sesiones guardadas mantienen sus índices, pero el historial de esas 25
+    preguntas se reinicia porque cambia su `q`.
+- Validación reproducible del banco de inglés:
+  `python herramientas/validar_banco.py` (comprueba estructura, conteos,
+  duplicados, distribución y las 240 citas contra la fuente extraída;
+  no forma parte de la web).
 - Fondos y opacidad (v2.4):
   · Carpeta fondos/ + registro js/fondos.js. Botón en el cluster fijo
     (QR · Fondo · Tema), disponible desde cualquier pantalla.
@@ -279,17 +295,17 @@ suman archivos.
 slider enfocado, las flechas lo ajustan (nativo) y Tab cierra el menú.
 
 13 · PENDIENTES (ROADMAP)
-1 · Terminar el banco de inglés (ingles-basico-tebaev-v1): falta el
-    visto bueno del dueño a la estructura, pegar los Bloques II–VIII
-    del PDF y generar los lotes (15–20 preguntas por entrega);
-    después, integración según §8.
+1 · Banco de inglés (ingles-basico-tebaev-v1): COMPLETADO a 240
+    preguntas (60 por sección), integrado en CATALOGO e index.html y
+    validado (estructura, citas y sintaxis). Pendiente opcional:
+    revisión por muestreo de enunciados y citas.
 2 · Opcional y aplazado: mostrar ref/cita en pantalla (p. ej., una
     línea "Fuente" en Revisión). Requiere tocar app.js: solo proponerlo
     si el dueño lo pide tras usar los metadatos invisibles.
 Descartados por el dueño (no volver a proponer): bloque JS del PDF
 Nematrian (ya cubierto por el banco v2.6) · mejoras UI v2.3 (barra
 sticky, entrada escalonada, theme-color dinámica, título de pestaña
-dinámico) · banner diagnóstico v2 (el banner ya cubre los 5 bancos) ·
+dinámico) · banner diagnóstico v2 (el banner ya cubre los 6 bancos) ·
 ampliación de la sección C de verbos · PWA instalable · subida a GitHub
 y verificación de Pages (incl. borrar js/banco.js y js/banco-verbos.js
 del repo si aún figuran).
@@ -350,8 +366,25 @@ del repo si aún figuran).
   creado (prompt maestro reutilizable: fases propuesta → lotes →
   integración) · js/textos.js incorporado al árbol de archivos (existía
   desde v2.5 sin figurar) · puente de títulos de js/bancos.js
-  documentado · en elaboración: banco de inglés
-  (ingles-basico-tebaev-v1, 165 preguntas previstas).
+  documentado · iniciado: banco de inglés
+  (ingles-basico-tebaev-v1, 165 preguntas; ampliado a 240 en v2.8).
+- v2.8: banco de inglés completado y ampliado — ingles-basico-tebaev-v1
+  ("Test de inglés básico", 240 preguntas; A/B/C/D = 60 cada una),
+  integrado en CATALOGO e index.html · 75 preguntas nuevas (A+15, B+20,
+  C+15, D+25) con el mismo meta.id → historial intacto · 240/240 citas
+  verificadas contra el texto extraído del PDF · respuesta correcta
+  equilibrada (15/15/15/15 por sección) · 5 citas heredadas de las 20
+  originales corregidas sin tocar enunciados, opciones ni respuestas ·
+  validador guardado en herramientas/validar_banco.py, con la fuente
+  herramientas/fuente_ingles.txt para reproducir la auditoría de citas.
+- v2.9: banco de inglés centrado en aprender inglés — se retiraron 25
+  preguntas de comprensión lectora basadas en datos de personajes
+  (ocupaciones, parentescos, edades, horarios, deportes, etc.) y se
+  sustituyeron en el mismo slot por 25 preguntas de gramática/vocabulario
+  (A+9, B+5, C+7, D+4). Se mantuvieron 240 preguntas, 60 por sección,
+  15/15/15/15 y los índices de las sesiones guardadas · 240/240 citas
+  verificadas · validador en OK · sintaxis comprobada con esprima y
+  ejecución con QuickJS.
 
 15 · PROTOCOLO DE TRABAJO CON LA IA (cómo trabajo yo)
 - Conversación nueva: pegar este README completo al inicio.
